@@ -1,1053 +1,242 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paleontology Expedition</title>
+    <title>Paleontology Clicker</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: #2c3e50;
-            color: #ecf0f1;
-            overflow-x: hidden;
-        }
-
-        #game-container {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #game-header {
-            background: #34495e;
-            padding: 20px;
-            border-bottom: 3px solid #e67e22;
-        }
-
-        #game-header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #e67e22;
-            text-align: center;
-        }
-
-        #resource-display {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-
-        .resource {
-            background: #2c3e50;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: 2px solid #e67e22;
-            font-size: 1.2em;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .resource-icon {
-            font-size: 1.5em;
-        }
-
-        #game-main {
-            flex: 1;
-            display: flex;
-            padding: 20px;
-            gap: 20px;
-        }
-
-        #digsite-container {
-            flex: 2;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        #digsite-view {
-            background: #8b4513;
-            border: 3px solid #d4a574;
-            border-radius: 10px;
-            height: 400px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #digsite-info {
-            background: #34495e;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #e67e22;
-        }
-
-        #digsite-info h3 {
-            color: #e67e22;
-            margin-bottom: 10px;
-        }
-
-        .fossil {
-            position: absolute;
-            background: #f4d03f;
-            border: 2px solid #f39c12;
-            border-radius: 5px;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: transform 0.2s;
-            animation: fossilSpawn 0.5s ease-out;
-        }
-
-        .fossil:hover {
-            transform: scale(1.1);
-            background: #f39c12;
-        }
-
-        @keyframes fossilSpawn {
-            0% { transform: scale(0) rotate(180deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        #side-panels {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .panel {
-            background: #34495e;
-            border: 2px solid #e67e22;
-            border-radius: 10px;
-            padding: 20px;
-        }
-
-        .panel h3 {
-            color: #e67e22;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #e67e22;
-            padding-bottom: 5px;
-        }
-
-        .upgrade-item {
-            background: #2c3e50;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .upgrade-button {
-            background: #e67e22;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .upgrade-button:hover {
-            background: #d35400;
-        }
-
-        .upgrade-button:disabled {
-            background: #7f8c8d;
-            cursor: not-allowed;
-        }
-
-        .skeleton-progress {
-            background: #2c3e50;
-            border: 1px solid #bdc3c7;
-            border-radius: 5px;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-
-        .skeleton-progress h4 {
-            color: #3498db;
-            margin-bottom: 5px;
-        }
-
-        .progress-bar {
-            background: #7f8c8d;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 5px 0;
-        }
-
-        .progress-fill {
-            background: #e67e22;
-            height: 100%;
-            transition: width 0.3s ease;
-        }
-
-        #action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-            background: #34495e;
-            border-top: 3px solid #e67e22;
-        }
-
-        #action-buttons button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 5px;
-            font-size: 1.1em;
-            cursor: pointer;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        #action-buttons button:hover:not(:disabled) {
-            background: #2980b9;
-        }
-
-        #action-buttons button:disabled {
-            background: #7f8c8d;
-            cursor: not-allowed;
-        }
-
-        #expedition-btn {
-            background: #27ae60;
-        }
-
-        #expedition-btn:hover:not(:disabled) {
-            background: #229954;
-        }
-
-        #ascend-btn {
-            background: #9b59b6;
-        }
-
-        #ascend-btn:hover:not(:disabled) {
-            background: #8e44ad;
-        }
-
-        #notification-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        .notification {
-            background: #34495e;
-            border: 2px solid #3498db;
-            border-radius: 5px;
-            padding: 15px;
-            margin-bottom: 10px;
-            max-width: 300px;
-            animation: notificationSlide 0.3s ease-out;
-        }
-
-        .notification.success {
-            border-color: #27ae60;
-            background: #2d5a3d;
-        }
-
-        .notification.fade-out {
-            animation: notificationFade 0.3s ease-out forwards;
-        }
-
-        @keyframes notificationSlide {
-            0% { transform: translateX(100%); opacity: 0; }
-            100% { transform: translateX(0); opacity: 1; }
-        }
-
-        @keyframes notificationFade {
-            0% { opacity: 1; }
-            100% { opacity: 0; transform: translateX(100%); }
-        }
-
-        @media (max-width: 768px) {
-            #game-main {
-                flex-direction: column;
-            }
-            
-            #resource-display {
-                gap: 15px;
-            }
-            
-            .resource {
-                font-size: 1em;
-                padding: 8px 15px;
-            }
-            
-            #action-buttons {
-                flex-wrap: wrap;
-                gap: 10px;
-            }
-            
-            #action-buttons button {
-                padding: 10px 20px;
-                font-size: 1em;
-            }
-        }
+        body { font-family: Arial, sans-serif; background: #2c3e50; color: white; padding: 20px; }
+        .game-area { max-width: 1000px; margin: 0 auto; }
+        .stats { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat { background: #34495e; padding: 15px; border-radius: 5px; }
+        .digsite { background: #8b4513; height: 300px; position: relative; border-radius: 10px; margin-bottom: 20px; }
+        .fossil { position: absolute; background: #f39c12; padding: 5px 10px; border-radius: 3px; cursor: pointer; }
+        .fossil:hover { background: #e67e22; }
+        .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .panel { background: #34495e; padding: 20px; border-radius: 5px; }
+        .upgrade { background: #2c3e50; padding: 10px; margin: 5px 0; border-radius: 3px; display: flex; justify-content: space-between; }
+        .upgrade button { background: #e67e22; color: white; border: none; padding: 5px 15px; border-radius: 3px; cursor: pointer; }
+        .upgrade button:disabled { background: #7f8c8d; cursor: not-allowed; }
+        .skeleton { margin: 10px 0; }
+        .progress-bar { background: #7f8c8d; height: 20px; border-radius: 10px; overflow: hidden; margin: 5px 0; }
+        .progress-fill { background: #e67e22; height: 100%; transition: width 0.3s; }
+        .actions { text-align: center; margin: 20px 0; }
+        .actions button { background: #3498db; color: white; border: none; padding: 15px 30px; border-radius: 5px; margin: 0 10px; cursor: pointer; font-size: 16px; }
+        .actions button:disabled { background: #7f8c8d; }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <header id="game-header">
-            <h1>Paleontology Expedition</h1>
-            <div id="resource-display">
-                <div class="resource">
-                    <span class="resource-icon">🦴</span>
-                    <span id="fossil-count">0</span> Fossils
-                </div>
-                <div class="resource">
-                    <span class="resource-icon">🗺️</span>
-                    <span id="expedition-points">0</span> Expedition Points
-                </div>
-                <div class="resource">
-                    <span class="resource-icon">👨‍🔬</span>
-                    <span id="paleontologist-count">0</span> Paleontologists
-                </div>
-            </div>
-        </header>
+    <div class="game-area">
+        <h1>🦴 Paleontology Expedition</h1>
         
-        <main id="game-main">
-            <div id="digsite-container">
-                <div id="digsite-view"></div>
-                <div id="digsite-info"></div>
-            </div>
-            
-            <div id="side-panels">
-                <div id="upgrade-panel" class="panel">
-                    <h3>Upgrades</h3>
-                    <div id="upgrade-list"></div>
-                </div>
-                <div id="skeleton-panel" class="panel">
-                    <h3>Skeleton Progress</h3>
-                    <div id="skeleton-list"></div>
-                </div>
-                <div id="expedition-panel" class="panel">
-                    <h3>Expedition Info</h3>
-                    <div id="expedition-info"></div>
-                </div>
-            </div>
-        </main>
-        
-        <div id="action-buttons">
-            <button id="collect-all-btn">Collect All Fossils</button>
-            <button id="museum-btn">Open Museum</button>
-            <button id="expedition-btn" disabled>Start Expedition</button>
-            <button id="ascend-btn" disabled>Ascend</button>
+        <div class="stats">
+            <div class="stat">🦴 Fossils: <span id="fossils">0</span></div>
+            <div class="stat">🗺️ Exp Points: <span id="exp-points">0</span></div>
+            <div class="stat">📊 Expeditions: <span id="expeditions">0</span></div>
         </div>
         
-        <div id="notification-container"></div>
+        <div id="digsite" class="digsite"></div>
+        
+        <div class="panels">
+            <div class="panel">
+                <h3>🔧 Upgrades</h3>
+                <div id="upgrades"></div>
+            </div>
+            
+            <div class="panel">
+                <h3>🦕 Skeletons</h3>
+                <div id="skeletons"></div>
+            </div>
+        </div>
+        
+        <div class="actions">
+            <button onclick="collectAll()">Collect All</button>
+            <button id="expedition-btn" onclick="startExpedition()" disabled>Start Expedition</button>
+        </div>
     </div>
 
     <script>
-        const GAME_DATA = {
-            CONFIG: {
-                FOSSIL_BASE_SPAWN_RATE: 1000,
-                FOSSIL_BASE_VALUE: 1,
-                SKELETON_PIECE_BASE_CHANCE: 0.0005,
-                MAX_FOSSILS_ON_GROUND: 10,
-                ASCENSION_THRESHOLD: 1e12,
-            },
-            
-            player: {
-                fossils: 0,
-                fossilsLifetime: 0,
-                digSpeed: 1,
-                fossilQuality: 1,
-                fossilCapacity: 10,
-                currentDigsite: 'prehistoric_valley',
-                
-                expeditions: 0,
-                expeditionMultiplier: 1,
-                expeditionPoints: 0,
-                
-                ascensions: 0,
-                paleontologists: 0,
-                
-                skeletonPieces: {},
-                completedSkeletons: [],
-                
-                museumCatalog: {},
-                relics: {},
-                
-                upgrades: {
-                    basicDigSpeed: 0,
-                    basicFossilQuality: 0,
-                    basicCapacity: 0,
-                    expeditionMultiplier: 0,
-                    newDigsites: 0,
-                    skeletonChanceBoost: 0,
-                    expeditionCapacityBoost: 0,
-                    expeditionSpawnBoost: 0,
-                    fossilBoostPermanent: 0,
-                    relicEffectBoost: 0,
-                    skeletonPowerBoost: 0,
-                    autoDigger: 0,
-                }
+        // Game state
+        let game = {
+            fossils: 0,
+            fossilsLifetime: 0,
+            expPoints: 0,
+            expeditions: 0,
+            digSpeed: 1,
+            fossilValue: 1,
+            capacity: 10,
+            fossilsOnGround: [],
+            skeletonPieces: {},
+            completedSkeletons: [],
+            upgrades: {
+                speed: 0,
+                value: 0,
+                capacity: 0
             }
         };
 
-        const SKELETON_DATA = {
-            velociraptor: {
-                name: "Velociraptor",
-                pieces: ['skull', 'spine', 'ribs', 'left_arm', 'right_arm', 'left_leg', 'right_leg', 'tail', 'claws'],
-                requiredForFirstExpedition: true,
-                completionBonus: {
-                    type: 'skeleton_chance',
-                    value: 0.0005
-                },
-                description: "A swift predator from the Late Cretaceous"
-            },
-            
-            triceratops: {
-                name: "Triceratops",
-                pieces: ['skull', 'frill', 'horns', 'spine', 'ribs', 'left_front_leg', 'right_front_leg', 'left_back_leg', 'right_back_leg', 'tail'],
-                unlockRequirement: { expeditions: 1 },
-                completionBonus: {
-                    type: 'fossil_value',
-                    value: 1.5
-                },
-                description: "A heavily armored herbivore with distinctive horns"
-            },
-            
-            stegosaurus: {
-                name: "Stegosaurus",
-                pieces: ['skull', 'spine', 'plates_front', 'plates_middle', 'plates_back', 'ribs', 'left_front_leg', 'right_front_leg', 'left_back_leg', 'right_back_leg', 'tail', 'tail_spikes'],
-                unlockRequirement: { expeditions: 3 },
-                completionBonus: {
-                    type: 'dig_speed',
-                    value: 2.0
-                },
-                description: "Famous for its distinctive back plates and tail spikes"
-            }
+        // Simple data
+        const skeletons = {
+            velociraptor: { name: "Velociraptor", pieces: 5 },
+            triceratops: { name: "Triceratops", pieces: 8 },
+            trex: { name: "T-Rex", pieces: 12 }
         };
 
-        const UPGRADE_DATA = {
-            basic: {
-                digSpeed: {
-                    name: "Improved Tools",
-                    description: "Increase fossil spawn rate",
-                    baseCost: 10,
-                    costMultiplier: 1.15,
-                    effect: level => Math.pow(1.2, level),
-                    maxLevel: 1000
-                },
-                
-                fossilQuality: {
-                    name: "Expert Training",
-                    description: "Increase fossil value",
-                    baseCost: 25,
-                    costMultiplier: 1.2,
-                    effect: level => Math.pow(1.15, level),
-                    maxLevel: 1000
-                },
-                
-                fossilCapacity: {
-                    name: "Larger Site",
-                    description: "More fossils can spawn at once",
-                    baseCost: 100,
-                    costMultiplier: 1.25,
-                    effect: level => Math.floor(10 + level * 2),
-                    maxLevel: 100
-                }
-            }
+        const upgrades = {
+            speed: { name: "Dig Speed", cost: 10, multiplier: 1.15 },
+            value: { name: "Fossil Value", cost: 25, multiplier: 1.2 },
+            capacity: { name: "Site Size", cost: 100, multiplier: 1.25 }
         };
 
-        const DIGSITE_DATA = {
-            prehistoric_valley: {
-                name: "Prehistoric Valley",
-                description: "A lush valley where fossils are abundant",
-                fossilMultiplier: 1,
-                unlockRequirement: null,
-                availableSkeletons: ['velociraptor']
-            }
-        };
-
-        class FossilSystem {
-            constructor(game) {
-                this.game = game;
-                this.spawnTimer = 0;
-            }
+        // Spawn fossils
+        function spawnFossil() {
+            if (game.fossilsOnGround.length >= game.capacity) return;
             
-            update(deltaTime) {
-                this.spawnTimer += deltaTime;
-                
-                const spawnRate = GAME_DATA.CONFIG.FOSSIL_BASE_SPAWN_RATE / this.game.getTotalDigSpeed();
-                
-                if (this.spawnTimer >= spawnRate && this.canSpawnFossil()) {
-                    this.spawnFossil();
-                    this.spawnTimer = 0;
-                }
-                
-                this.autoCollectOldFossils();
-            }
+            const fossil = {
+                id: Date.now() + Math.random(),
+                value: Math.floor(game.fossilValue),
+                x: Math.random() * 250 + 25,
+                y: Math.random() * 250 + 25
+            };
             
-            canSpawnFossil() {
-                return this.game.fossilsOnGround.length < GAME_DATA.player.fossilCapacity;
-            }
+            game.fossilsOnGround.push(fossil);
             
-            spawnFossil() {
-                const fossil = {
-                    id: Date.now() + Math.random(),
-                    value: this.calculateFossilValue(),
-                    spawnTime: Date.now(),
-                    x: Math.random() * 350 + 25,
-                    y: Math.random() * 350 + 25
-                };
+            // Skeleton piece chance
+            if (Math.random() < 0.001) {
+                const skeletonTypes = Object.keys(skeletons);
+                const skeleton = skeletonTypes[Math.floor(Math.random() * skeletonTypes.length)];
                 
-                this.game.fossilsOnGround.push(fossil);
+                if (!game.skeletonPieces[skeleton]) game.skeletonPieces[skeleton] = 0;
+                game.skeletonPieces[skeleton]++;
                 
-                if (Math.random() < this.game.getSkeletonPieceChance()) {
-                    this.game.skeletonSystem.dropSkeletonPiece();
-                }
-            }
-            
-            calculateFossilValue() {
-                const baseValue = GAME_DATA.CONFIG.FOSSIL_BASE_VALUE;
-                return Math.floor(baseValue * this.game.getTotalFossilValue());
-            }
-            
-            collectFossil(fossilId) {
-                const fossilIndex = this.game.fossilsOnGround.findIndex(f => f.id === fossilId);
-                if (fossilIndex === -1) return;
-                
-                const fossil = this.game.fossilsOnGround[fossilIndex];
-                GAME_DATA.player.fossils += fossil.value;
-                GAME_DATA.player.fossilsLifetime += fossil.value;
-                
-                this.game.fossilsOnGround.splice(fossilIndex, 1);
-            }
-            
-            collectAllFossils() {
-                for (const fossil of this.game.fossilsOnGround) {
-                    GAME_DATA.player.fossils += fossil.value;
-                    GAME_DATA.player.fossilsLifetime += fossil.value;
-                }
-                this.game.fossilsOnGround = [];
-            }
-            
-            autoCollectOldFossils() {
-                const now = Date.now();
-                const autoCollectTime = 30000;
-                
-                this.game.fossilsOnGround = this.game.fossilsOnGround.filter(fossil => {
-                    if (now - fossil.spawnTime > autoCollectTime) {
-                        GAME_DATA.player.fossils += fossil.value;
-                        GAME_DATA.player.fossilsLifetime += fossil.value;
-                        return false;
-                    }
-                    return true;
-                });
-            }
-        }
-
-        class SkeletonSystem {
-            constructor(game) {
-                this.game = game;
-            }
-            
-            dropSkeletonPiece() {
-                const availableSkeletons = this.getAvailableSkeletons();
-                if (availableSkeletons.length === 0) return;
-                
-                const selectedSkeleton = this.selectWeightedSkeleton(availableSkeletons);
-                const skeletonData = SKELETON_DATA[selectedSkeleton];
-                
-                const currentPieces = GAME_DATA.player.skeletonPieces[selectedSkeleton] || [];
-                const missingPieces = skeletonData.pieces.filter(piece => !currentPieces.includes(piece));
-                
-                if (missingPieces.length > 0) {
-                    const selectedPiece = missingPieces[Math.floor(Math.random() * missingPieces.length)];
-                    this.addSkeletonPiece(selectedSkeleton, selectedPiece);
-                }
-            }
-            
-            addSkeletonPiece(skeletonType, piece) {
-                if (!GAME_DATA.player.skeletonPieces[skeletonType]) {
-                    GAME_DATA.player.skeletonPieces[skeletonType] = [];
-                }
-                
-                if (!GAME_DATA.player.skeletonPieces[skeletonType].includes(piece)) {
-                    GAME_DATA.player.skeletonPieces[skeletonType].push(piece);
-                    
-                    const skeletonData = SKELETON_DATA[skeletonType];
-                    if (GAME_DATA.player.skeletonPieces[skeletonType].length === skeletonData.pieces.length) {
-                        this.completeSkeleton(skeletonType);
-                    }
-                    
-                    this.game.ui.showNotification(`Found ${piece} piece of ${skeletonData.name}!`);
-                }
-            }
-            
-            completeSkeleton(skeletonType) {
-                if (!GAME_DATA.player.completedSkeletons.includes(skeletonType)) {
-                    GAME_DATA.player.completedSkeletons.push(skeletonType);
-                    
-                    const skeletonData = SKELETON_DATA[skeletonType];
-                    this.game.ui.showNotification(`Completed ${skeletonData.name} skeleton!`, 'success');
-                }
-            }
-            
-            getAvailableSkeletons() {
-                const currentDigsite = DIGSITE_DATA[GAME_DATA.player.currentDigsite];
-                return currentDigsite.availableSkeletons.filter(skeleton => {
-                    const skeletonData = SKELETON_DATA[skeleton];
-                    return this.meetsUnlockRequirement(skeletonData.unlockRequirement);
-                });
-            }
-            
-            selectWeightedSkeleton(availableSkeletons) {
-                const weights = availableSkeletons.map(skeleton => {
-                    const isComplete = GAME_DATA.player.completedSkeletons.includes(skeleton);
-                    return isComplete ? 1 : 3;
-                });
-                
-                const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
-                let random = Math.random() * totalWeight;
-                
-                for (let i = 0; i < availableSkeletons.length; i++) {
-                    random -= weights[i];
-                    if (random <= 0) {
-                        return availableSkeletons[i];
-                    }
-                }
-                
-                return availableSkeletons[0];
-            }
-            
-            meetsUnlockRequirement(requirement) {
-                if (!requirement) return true;
-                
-                if (requirement.expeditions && GAME_DATA.player.expeditions < requirement.expeditions) {
-                    return false;
-                }
-                
-                return true;
-            }
-            
-            canStartExpedition() {
-                return GAME_DATA.player.completedSkeletons.includes('velociraptor');
-            }
-            
-            getSkeletonProgress(skeletonType) {
-                const skeletonData = SKELETON_DATA[skeletonType];
-                const currentPieces = GAME_DATA.player.skeletonPieces[skeletonType] || [];
-                return {
-                    current: currentPieces.length,
-                    total: skeletonData.pieces.length,
-                    pieces: currentPieces,
-                    missing: skeletonData.pieces.filter(piece => !currentPieces.includes(piece))
-                };
-            }
-        }
-
-        class RebirthSystem {
-            constructor(game) {
-                this.game = game;
-            }
-            
-            canStartExpedition() {
-                return this.game.skeletonSystem.canStartExpedition();
-            }
-            
-            calculateExpeditionPoints() {
-                const basePoints = Math.floor(Math.log10(GAME_DATA.player.fossils + 1));
-                const bonusPoints = Math.floor(GAME_DATA.player.completedSkeletons.length * 0.5);
-                return Math.max(1, basePoints + bonusPoints);
-            }
-            
-            startExpedition() {
-                if (!this.canStartExpedition()) return false;
-                
-                const pointsEarned = this.calculateExpeditionPoints();
-                GAME_DATA.player.expeditionPoints += pointsEarned;
-                GAME_DATA.player.expeditions++;
-                
-                this.updateExpeditionMultiplier();
-                this.resetCurrentRun();
-                
-                this.game.ui.showNotification(`Expedition complete! Earned ${pointsEarned} expedition points.`, 'success');
-                
-                return true;
-            }
-            
-            updateExpeditionMultiplier() {
-                let multiplier = Math.pow(1.1, GAME_DATA.player.expeditions);
-                multiplier *= Math.pow(1.5, GAME_DATA.player.upgrades.expeditionMultiplier);
-                GAME_DATA.player.expeditionMultiplier = multiplier;
-            }
-            
-            resetCurrentRun() {
-                const keepData = {
-                    expeditions: GAME_DATA.player.expeditions,
-                    expeditionPoints: GAME_DATA.player.expeditionPoints,
-                    expeditionMultiplier: GAME_DATA.player.expeditionMultiplier,
-                    completedSkeletons: [...GAME_DATA.player.completedSkeletons],
-                    upgrades: { ...GAME_DATA.player.upgrades },
-                    fossilsLifetime: GAME_DATA.player.fossilsLifetime,
-                    ascensions: GAME_DATA.player.ascensions,
-                    paleontologists: GAME_DATA.player.paleontologists,
-                    museumCatalog: { ...GAME_DATA.player.museumCatalog }
-                };
-                
-                Object.assign(GAME_DATA.player, {
-                    fossils: 0,
-                    digSpeed: 1,
-                    fossilQuality: 1,
-                    fossilCapacity: 10,
-                    currentDigsite: 'prehistoric_valley',
-                    skeletonPieces: {},
-                    relics: {}
-                });
-                
-                Object.assign(GAME_DATA.player, keepData);
-                this.game.upgradeSystem.applyAllUpgrades();
-                this.game.fossilsOnGround = [];
-            }
-        }
-
-        class UpgradeSystem {
-            constructor(game) {
-                this.game = game;
-            }
-            
-            buyUpgrade(upgradeType, upgradeId) {
-                const upgradeData = UPGRADE_DATA[upgradeType][upgradeId];
-                const currentLevel = GAME_DATA.player.upgrades[`${upgradeType}${upgradeId.charAt(0).toUpperCase() + upgradeId.slice(1)}`] || 0;
-                
-                if (currentLevel >= upgradeData.maxLevel) return false;
-                
-                const cost = this.getUpgradeCost(upgradeData, currentLevel);
-                
-                if (upgradeType === 'basic' && GAME_DATA.player.fossils >= cost) {
-                    GAME_DATA.player.fossils -= cost;
-                    GAME_DATA.player.upgrades[`${upgradeType}${upgradeId.charAt(0).toUpperCase() + upgradeId.slice(1)}`] = currentLevel + 1;
-                    this.applyUpgrade(upgradeType, upgradeId);
-                    return true;
-                }
-                
-                return false;
-            }
-            
-            getUpgradeCost(upgradeData, level) {
-                return Math.floor(upgradeData.baseCost * Math.pow(upgradeData.costMultiplier, level));
-            }
-            
-            applyUpgrade(upgradeType, upgradeId) {
-                const upgradeData = UPGRADE_DATA[upgradeType][upgradeId];
-                const level = GAME_DATA.player.upgrades[`${upgradeType}${upgradeId.charAt(0).toUpperCase() + upgradeId.slice(1)}`];
-                
-                if (upgradeId === 'digSpeed') {
-                    GAME_DATA.player.digSpeed = upgradeData.effect(level);
-                } else if (upgradeId === 'fossilQuality') {
-                    GAME_DATA.player.fossilQuality = upgradeData.effect(level);
-                } else if (upgradeId === 'fossilCapacity') {
-                    GAME_DATA.player.fossilCapacity = upgradeData.effect(level);
-                }
-            }
-            
-            applyAllUpgrades() {
-                for (const [upgradeType, upgrades] of Object.entries(UPGRADE_DATA)) {
-                    for (const upgradeId of Object.keys(upgrades)) {
-                        this.applyUpgrade(upgradeType, upgradeId);
-                    }
+                if (game.skeletonPieces[skeleton] >= skeletons[skeleton].pieces && !game.completedSkeletons.includes(skeleton)) {
+                    game.completedSkeletons.push(skeleton);
+                    alert(`Completed ${skeletons[skeleton].name} skeleton!`);
                 }
             }
         }
 
-        class MainUI {
-            constructor(game) {
-                this.game = game;
-                this.bindEvents();
-            }
+        // Collect fossil
+        function collectFossil(fossilId) {
+            const index = game.fossilsOnGround.findIndex(f => f.id === fossilId);
+            if (index === -1) return;
             
-            update() {
-                this.updateResourceDisplay();
-                this.updateDigsiteView();
-                this.updateUpgradePanel();
-                this.updateSkeletonPanel();
-                this.updateExpeditionPanel();
-                this.updateActionButtons();
+            const fossil = game.fossilsOnGround[index];
+            game.fossils += fossil.value;
+            game.fossilsLifetime += fossil.value;
+            game.fossilsOnGround.splice(index, 1);
+        }
+
+        // Collect all fossils
+        function collectAll() {
+            for (const fossil of game.fossilsOnGround) {
+                game.fossils += fossil.value;
+                game.fossilsLifetime += fossil.value;
             }
+            game.fossilsOnGround = [];
+        }
+
+        // Buy upgrade
+        function buyUpgrade(type) {
+            const upgrade = upgrades[type];
+            const level = game.upgrades[type];
+            const cost = Math.floor(upgrade.cost * Math.pow(upgrade.multiplier, level));
             
-            updateResourceDisplay() {
-                document.getElementById('fossil-count').textContent = this.formatNumber(GAME_DATA.player.fossils);
-                document.getElementById('expedition-points').textContent = this.formatNumber(GAME_DATA.player.expeditionPoints);
-                document.getElementById('paleontologist-count').textContent = this.formatNumber(GAME_DATA.player.paleontologists);
-            }
-            
-            updateDigsiteView() {
-                const digsiteView = document.getElementById('digsite-view');
-                const currentDigsite = DIGSITE_DATA[GAME_DATA.player.currentDigsite];
+            if (game.fossils >= cost) {
+                game.fossils -= cost;
+                game.upgrades[type]++;
                 
-                document.getElementById('digsite-info').innerHTML = `
-                    <h3>${currentDigsite.name}</h3>
-                    <p>${currentDigsite.description}</p>
-                    <p>Fossil Value Multiplier: ${currentDigsite.fossilMultiplier}x</p>
-                `;
+                if (type === 'speed') game.digSpeed *= 1.2;
+                if (type === 'value') game.fossilValue *= 1.15;
+                if (type === 'capacity') game.capacity += 2;
+            }
+        }
+
+        // Start expedition (rebirth)
+        function startExpedition() {
+            if (!game.completedSkeletons.includes('velociraptor')) return;
+            
+            const points = Math.floor(Math.log10(game.fossils + 1)) + game.completedSkeletons.length;
+            game.expPoints += points;
+            game.expeditions++;
+            
+            // Reset current run
+            game.fossils = 0;
+            game.digSpeed = Math.pow(1.1, game.expeditions);
+            game.fossilValue = Math.pow(1.1, game.expeditions);
+            game.capacity = 10;
+            game.fossilsOnGround = [];
+            game.skeletonPieces = {};
+            game.upgrades = { speed: 0, value: 0, capacity: 0 };
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('fossils').textContent = Math.floor(game.fossils);
+            document.getElementById('exp-points').textContent = game.expPoints;
+            document.getElementById('expeditions').textContent = game.expeditions;
+            
+            // Update digsite
+            const digsite = document.getElementById('digsite');
+            digsite.innerHTML = game.fossilsOnGround.map(fossil => 
+                `<div class="fossil" style="left: ${fossil.x}px; top: ${fossil.y}px;" onclick="collectFossil('${fossil.id}')">
+                    🦴 ${fossil.value}
+                </div>`
+            ).join('');
+            
+            // Update upgrades
+            const upgradesDiv = document.getElementById('upgrades');
+            upgradesDiv.innerHTML = Object.entries(upgrades).map(([type, upgrade]) => {
+                const level = game.upgrades[type];
+                const cost = Math.floor(upgrade.cost * Math.pow(upgrade.multiplier, level));
+                const canAfford = game.fossils >= cost;
                 
-                digsiteView.innerHTML = this.game.fossilsOnGround.map(fossil => `
-                    <div class="fossil" 
-                         style="left: ${fossil.x}px; top: ${fossil.y}px;"
-                         onclick="game.fossilSystem.collectFossil('${fossil.id}')">
-                        🦴 ${this.formatNumber(fossil.value)}
+                return `
+                    <div class="upgrade">
+                        <div>${upgrade.name} (${level})</div>
+                        <button ${canAfford ? '' : 'disabled'} onclick="buyUpgrade('${type}')">${cost}</button>
                     </div>
-                `).join('');
-            }
-            
-            updateUpgradePanel() {
-                const upgradeList = document.getElementById('upgrade-list');
-                let html = '';
-                
-                for (const [upgradeId, upgradeData] of Object.entries(UPGRADE_DATA.basic)) {
-                    const currentLevel = GAME_DATA.player.upgrades[`basic${upgradeId.charAt(0).toUpperCase() + upgradeId.slice(1)}`] || 0;
-                    const cost = this.game.upgradeSystem.getUpgradeCost(upgradeData, currentLevel);
-                    const canAfford = GAME_DATA.player.fossils >= cost;
-                    const maxLevel = currentLevel >= upgradeData.maxLevel;
-                    
-                    html += `
-                        <div class="upgrade-item">
-                            <div>
-                                <strong>${upgradeData.name}</strong> (Level ${currentLevel})
-                                <br><small>${upgradeData.description}</small>
-                            </div>
-                            <button class="upgrade-button" 
-                                    ${!canAfford || maxLevel ? 'disabled' : ''}
-                                    onclick="game.upgradeSystem.buyUpgrade('basic', '${upgradeId}')">
-                                ${maxLevel ? 'MAX' : this.formatNumber(cost)}
-                            </button>
-                        </div>
-                    `;
-                }
-                
-                upgradeList.innerHTML = html;
-            }
-            
-            updateSkeletonPanel() {
-                const skeletonList = document.getElementById('skeleton-list');
-                let html = '';
-                
-                const availableSkeletons = this.game.skeletonSystem.getAvailableSkeletons();
-                
-                for (const skeletonType of availableSkeletons) {
-                    const progress = this.game.skeletonSystem.getSkeletonProgress(skeletonType);
-                    const skeletonData = SKELETON_DATA[skeletonType];
-                    const percentage = (progress.current / progress.total) * 100;
-                    
-                    html += `
-                        <div class="skeleton-progress">
-                            <h4>${skeletonData.name}</h4>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${percentage}%"></div>
-                            </div>
-                            <small>${progress.current}/${progress.total} pieces</small>
-                        </div>
-                    `;
-                }
-                
-                skeletonList.innerHTML = html;
-            }
-            
-            updateExpeditionPanel() {
-                const expeditionInfo = document.getElementById('expedition-info');
-                const canExpedition = this.game.rebirthSystem.canStartExpedition();
-                const pointsWouldEarn = this.game.rebirthSystem.calculateExpeditionPoints();
-                
-                expeditionInfo.innerHTML = `
-                    <p><strong>Expeditions:</strong> ${GAME_DATA.player.expeditions}</p>
-                    <p><strong>Multiplier:</strong> ${GAME_DATA.player.expeditionMultiplier.toFixed(2)}x</p>
-                    <p><strong>Points Available:</strong> ${GAME_DATA.player.expeditionPoints}</p>
-                    <hr style="margin: 10px 0; border-color: #e67e22;">
-                    <p><strong>Next Expedition:</strong></p>
-                    <p>Points to earn: ${pointsWouldEarn}</p>
-                    <p>Status: ${canExpedition ? 'Ready!' : 'Complete Velociraptor skeleton first'}</p>
                 `;
-            }
+            }).join('');
             
-            updateActionButtons() {
-                const expeditionBtn = document.getElementById('expedition-btn');
-                const ascendBtn = document.getElementById('ascend-btn');
+            // Update skeletons
+            const skeletonsDiv = document.getElementById('skeletons');
+            skeletonsDiv.innerHTML = Object.entries(skeletons).map(([type, skeleton]) => {
+                const pieces = game.skeletonPieces[type] || 0;
+                const percentage = Math.min(100, (pieces / skeleton.pieces) * 100);
+                const completed = game.completedSkeletons.includes(type);
                 
-                expeditionBtn.disabled = !this.game.rebirthSystem.canStartExpedition();
-                ascendBtn.disabled = GAME_DATA.player.fossilsLifetime < GAME_DATA.CONFIG.ASCENSION_THRESHOLD;
-            }
+                return `
+                    <div class="skeleton">
+                        <div>${skeleton.name} ${completed ? '✓' : ''}</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${percentage}%"></div>
+                        </div>
+                        <small>${pieces}/${skeleton.pieces} pieces</small>
+                    </div>
+                `;
+            }).join('');
             
-            bindEvents() {
-                document.getElementById('collect-all-btn').onclick = () => {
-                    this.game.fossilSystem.collectAllFossils();
-                };
-                
-                document.getElementById('expedition-btn').onclick = () => {
-                    if (confirm('Start a new expedition? This will reset your current progress but give you permanent bonuses.')) {
-                        this.game.rebirthSystem.startExpedition();
-                    }
-                };
-                
-                document.getElementById('ascend-btn').onclick = () => {
-                    if (confirm('Ascend to a higher level? This will reset ALL progress but grant powerful paleontologists.')) {
-                        // Ascension logic would go here
-                        this.showNotification('Ascension not yet implemented!');
-                    }
-                };
-            }
-            
-            formatNumber(num) {
-                if (num < 1000) return Math.floor(num).toString();
-                if (num < 1000000) return (num / 1000).toFixed(1) + 'K';
-                if (num < 1000000000) return (num / 1000000).toFixed(1) + 'M';
-                if (num < 1000000000000) return (num / 1000000000).toFixed(1) + 'B';
-                return (num / 1000000000000).toFixed(1) + 'T';
-            }
-            
-            showNotification(message, type = 'info') {
-                const container = document.getElementById('notification-container');
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.textContent = message;
-                
-                container.appendChild(notification);
-                
-                setTimeout(() => {
-                    notification.classList.add('fade-out');
-                    setTimeout(() => container.removeChild(notification), 300);
-                }, 3000);
-            }
+            // Update expedition button
+            document.getElementById('expedition-btn').disabled = !game.completedSkeletons.includes('velociraptor');
         }
 
-        class Game {
-            constructor() {
-                this.isRunning = false;
-                this.lastUpdate = Date.now();
-                this.fossilsOnGround = [];
-                
-                this.fossilSystem = new FossilSystem(this);
-                this.skeletonSystem = new SkeletonSystem(this);
-                this.rebirthSystem = new RebirthSystem(this);
-                this.upgradeSystem = new UpgradeSystem(this);
-                
-                this.ui = new MainUI(this);
-                
-                this.loadGame();
-            }
-            
-            start() {
-                this.isRunning = true;
-                this.gameLoop();
-            }
-            
-            gameLoop() {
-                if (!this.isRunning) return;
-                
-                const now = Date.now();
-                const deltaTime = now - this.lastUpdate;
-                this.lastUpdate = now;
-                
-                this.fossilSystem.update(deltaTime);
-                this.ui.update();
-                
-                if (now % 30000 < 100) {
-                    this.saveGame();
-                }
-                
-                requestAnimationFrame(() => this.gameLoop());
-            }
-            
-            getTotalFossilValue() {
-                let multiplier = GAME_DATA.player.fossilQuality;
-                multiplier *= GAME_DATA.player.expeditionMultiplier;
-                
-                for (const skeleton of GAME_DATA.player.completedSkeletons) {
-                    const skeletonData = SKELETON_DATA[skeleton];
-                    if (skeletonData.completionBonus.type === 'fossil_value') {
-                        multiplier *= skeletonData.completionBonus.value;
-                    }
-                }
-                
-                multiplier *= Math.pow(1.01, GAME_DATA.player.paleontologists);
-                
-                const currentDigsite = DIGSITE_DATA[GAME_DATA.player.currentDigsite];
-                multiplier *= currentDigsite.fossilMultiplier;
-                
-                return multiplier;
-            }
-            
-            getTotalDigSpeed() {
-                let speed = GAME_DATA.player.digSpeed;
-                
-                for (const skeleton of GAME_DATA.player.completedSkeletons) {
-                    const skeletonData = SKELETON_DATA[skeleton];
-                    if (skeletonData.completionBonus.type === 'dig_speed') {
-                        speed *= skeletonData.completionBonus.value;
-                    }
-                }
-                
-                return speed;
-            }
-            
-            getSkeletonPieceChance() {
-                let chance = GAME_DATA.CONFIG.SKELETON_PIECE_BASE_CHANCE;
-                
-                for (const skeleton of GAME_DATA.player.completedSkeletons) {
-                    const skeletonData = SKELETON_DATA[skeleton];
-                    if (skeletonData.completionBonus.type === 'skeleton_chance') {
-                        chance += skeletonData.completionBonus.value;
-                    }
-                }
-                
-                chance += GAME_DATA.player.upgrades.skeletonChanceBoost * 0.0001;
-                
-                return chance;
-            }
-            
-            saveGame() {
-                localStorage.setItem('paleontologyIncremental', JSON.stringify(GAME_DATA.player));
-            }
-            
-            loadGame() {
-                const saved = localStorage.getItem('paleontologyIncremental');
-                if (saved) {
-                    try {
-                        const loadedData = JSON.parse(saved);
-                        Object.assign(GAME_DATA.player, loadedData);
-                        this.upgradeSystem.applyAllUpgrades();
-                    } catch (e) {
-                        console.log('Failed to load save data');
-                    }
-                }
-            }
+        // Game loop
+        setInterval(() => {
+            if (Math.random() < 0.1 * game.digSpeed) spawnFossil();
+            updateDisplay();
+        }, 100);
+
+        // Auto-save
+        setInterval(() => {
+            localStorage.setItem('paleontologyGame', JSON.stringify(game));
+        }, 5000);
+
+        // Load save
+        const saved = localStorage.getItem('paleontologyGame');
+        if (saved) {
+            try {
+                game = Object.assign(game, JSON.parse(saved));
+            } catch(e) {}
         }
-
-        let game;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            game = new Game();
-            game.start();
-            
-            window.debugAddFossils = (amount) => {
-                GAME_DATA.player.fossils += amount;
-            };
-            
-            window.debugCompleteSkeleton = (skeletonType) => {
-                const skeletonData = SKELETON_DATA[skeletonType];
-                GAME_DATA.player.skeletonPieces[skeletonType] = [...skeletonData.pieces];
-                game.skeletonSystem.completeSkeleton(skeletonType);
-            };
-        });
     </script>
 </body>
 </html>
