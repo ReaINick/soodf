@@ -1,0 +1,678 @@
+// museum.html - Modal overlay system
+function createModalHTML() {
+    const modalHTML = `
+        <div id="modal-overlay" class="modal-overlay hidden">
+            <div id="modal-container" class="modal-container">
+                <div id="modal-header" class="modal-header">
+                    <h2 id="modal-title">Modal Title</h2>
+                    <button id="modal-close" class="modal-close">&times;</button>
+                </div>
+                <div id="modal-content" class="modal-content">
+                    <!-- Dynamic content goes here -->
+                </div>
+                <div id="modal-footer" class="modal-footer">
+                    <!-- Optional footer buttons -->
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+}
+
+// Enhanced Museum System
+class MuseumSystem {
+    constructor(game) {
+        this.game = game;
+        this.isOpen = false;
+    }
+    
+    catalogFossil(fossil) {
+        const digsiteName = DIGSITE_DATA[GAME_DATA.player.currentDigsite].name;
+        
+        if (!GAME_DATA.player.museumCatalog[digsiteName]) {
+            GAME_DATA.player.museumCatalog[digsiteName] = {
+                fossilsFound: 0,
+                totalValue: 0,
+                firstDiscovery: Date.now()
+            };
+        }
+        
+        const catalog = GAME_DATA.player.museumCatalog[digsiteName];
+        catalog.fossilsFound++;
+        catalog.totalValue += fossil.value;
+    }
+    
+    addCompletedSkeleton(skeletonType) {
+        const skeletonData = SKELETON_DATA[skeletonType];
+        GAME_DATA.player.museumCatalog[`skeleton_${skeletonType}`] = {
+            name: skeletonData.name,
+            completedAt: Date.now(),
+            expeditionsWhenCompleted: GAME_DATA.player.expeditions
+        };
+    }
+    
+    getMuseumStats() {
+        return {
+            totalDigsites: Object.keys(GAME_DATA.player.museumCatalog).filter(key => !key.startsWith('skeleton_')).length,
+            totalSkeletons: GAME_DATA.player.completedSkeletons.length,
+            totalFossilsFound: Object.values(GAME_DATA.player.museumCatalog)
+                .filter(entry => entry.fossilsFound)
+                .reduce((sum, entry) => sum + entry.fossilsFound, 0),
+            totalValue: Object.values(GAME_DATA.player.museumCatalog)
+                .filter(entry => entry.totalValue)
+                .reduce((sum, entry) => sum + entry.totalValue, 0)
+        };
+    }
+}
+
+// Modal System for Museum and other overlays
+class ModalSystem {
+    constructor() {
+        this.currentModal = null;
+        createModalHTML();
+        this.bindEvents();
+    }
+    
+    bindEvents() {
+        document.getElementById('modal-close').onclick = () => this.closeModal();
+        document.getElementById('modal-overlay').onclick = (e) => {
+            if (e.target.id === 'modal-overlay') this.closeModal();
+        };
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.currentModal) {
+                this.closeModal();
+            }
+        });
+    }
+    
+    openModal(title, content, footer = '') {
+        document.getElementById('modal-title').textContent = title;
+        document.getElementById('modal-content').innerHTML = content;
+        document.getElementById('modal-footer').innerHTML = footer;
+        document.getElementById('modal-overlay').classList.remove('hidden');
+        this.currentModal = title;
+    }
+    
+    closeModal() {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        this.currentModal = null;
+    }
+    
+    showMuseum() {
+        const stats = game.museumSystem.getMuseumStats();
+        
+        const content = `
+            <div class="museum-overview">
+                <div class="museum-stats">
+                    <div class="stat-item">
+                        <h4>🗺️ Digsites Explored</h4>
+                        <span class="stat-value">${stats.totalDigsites}</span>
+                    </div>
+                    <div class="stat-item">
+                        <h4>🦴 Skeletons Completed</h4>
+                        <span class="stat-value">${stats.totalSkeletons}</span>
+                    </div>
+                    <div class="stat-item">
+                        <h4>🔍 Fossils Found</h4>
+                        <span class="stat-value">${game.ui.formatNumber(stats.totalFossilsFound)}</span>
+                    </div>
+                    <div class="stat-item">
+                        <h4>💰 Total Value</h4>
+                        <span class="stat-value">${game.ui.formatNumber(stats.totalValue)}</span>
+                    </div>
+                </div>
+                
+                <div class="museum-tabs">
+                    <button class="tab-button active" data-tab="skeletons">Skeletons</button>
+                    <button class="tab-button" data-tab="digsites">Digsites</button>
+                    <button class="tab-button" data-tab="achievements">Achievements</button>
+                </div>
+                
+                <div class="museum-tab-content">
+                    <div id="skeletons-tab" class="tab-panel active">
+                        ${this.generateSkeletonsView()}
+                    </div>
+                    <div id="digsites-tab" class="tab-panel">
+                        ${this.generateDigsitesView()}
+                    </div>
+                    <div id="achievements-tab" class="tab-panel">
+                        ${this.generateAchievementsView()}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        this.openModal('🏛️ Museum of Natural History', content);
+        this.bindMuseumTabs();
+    }
+    
+    generateSkeletonsView() {
+        let html = '<div class="skeleton-gallery">';
+        
+        for (const [skeletonId, skeletonData] of Object.entries(SKELETON_DATA)) {
+            const isCompleted = GAME_DATA.player.completedSkeletons.includes(skeletonId);
+            const progress = game.skeletonSystem.getSkeletonProgress(skeletonId);
+            const isAvailable = game.skeletonSystem.getAvailableSkeletons().includes(skeletonId);
+            
+            if (!isAvailable && !isCompleted) continue;
+            
+            html += `
+                <div class="skeleton-exhibit ${isCompleted ? 'completed' : 'in-progress'}">
+                    <div class="skeleton-image">
+                        <div class="skeleton-placeholder">
+                            ${isCompleted ? '🦴' : '❓'}
+                        </div>
+                    </div>
+                    <div class="skeleton-info">
+                        <h4>${skeletonData.name}</h4>
+                        <p>${skeletonData.description}</p>
+                        <div class="skeleton-progress-bar">
+                            <div class="progress-fill" style="width: ${(progress.current / progress.total) * 100}%"></div>
+                        </div>
+                        <small>${progress.current}/${progress.total} pieces found</small>
+                        ${isCompleted ? `
+                            <div class="completion-bonus">
+                                <strong>Bonus:</strong> ${this.formatBonusText(skeletonData.completionBonus)}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    generateDigsitesView() {
+        let html = '<div class="digsite-gallery">';
+        
+        for (const [digsiteId, digsiteData] of Object.entries(DIGSITE_DATA)) {
+            const isUnlocked = game.skeletonSystem.meetsUnlockRequirement(digsiteData.unlockRequirement);
+            const catalogData = GAME_DATA.player.museumCatalog[digsiteData.name];
+            const isCurrent = GAME_DATA.player.currentDigsite === digsiteId;
+            
+            if (!isUnlocked && !catalogData) continue;
+            
+            html += `
+                <div class="digsite-exhibit ${isCurrent ? 'current' : ''}">
+                    <div class="digsite-info">
+                        <h4>${digsiteData.name}</h4>
+                        <p>${digsiteData.description}</p>
+                        <div class="digsite-stats">
+                            <div>Multiplier: ${digsiteData.fossilMultiplier}x</div>
+                            ${catalogData ? `
+                                <div>Fossils Found: ${game.ui.formatNumber(catalogData.fossilsFound)}</div>
+                                <div>Total Value: ${game.ui.formatNumber(catalogData.totalValue)}</div>
+                            ` : '<div>Not yet explored</div>'}
+                        </div>
+                        ${isUnlocked && !isCurrent ? `
+                            <button class="switch-digsite-btn" onclick="game.switchDigsite('${digsiteId}')">
+                                Switch to this digsite
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    generateAchievementsView() {
+        const achievements = [
+            {
+                name: "First Discovery",
+                description: "Find your first fossil",
+                completed: GAME_DATA.player.fossilsLifetime > 0,
+                icon: "🔍"
+            },
+            {
+                name: "Bone Collector",
+                description: "Complete your first skeleton",
+                completed: GAME_DATA.player.completedSkeletons.length > 0,
+                icon: "🦴"
+            },
+            {
+                name: "Explorer",
+                description: "Complete your first expedition",
+                completed: GAME_DATA.player.expeditions > 0,
+                icon: "🗺️"
+            },
+            {
+                name: "Fossil Millionaire",
+                description: "Collect 1,000,000 total fossil value",
+                completed: GAME_DATA.player.fossilsLifetime >= 1000000,
+                icon: "💰"
+            },
+            {
+                name: "Veteran Explorer",
+                description: "Complete 10 expeditions",
+                completed: GAME_DATA.player.expeditions >= 10,
+                icon: "🎖️"
+            }
+        ];
+        
+        let html = '<div class="achievements-list">';
+        
+        for (const achievement of achievements) {
+            html += `
+                <div class="achievement ${achievement.completed ? 'completed' : 'locked'}">
+                    <div class="achievement-icon">${achievement.icon}</div>
+                    <div class="achievement-info">
+                        <h4>${achievement.name}</h4>
+                        <p>${achievement.description}</p>
+                    </div>
+                    <div class="achievement-status">
+                        ${achievement.completed ? '✓' : '🔒'}
+                    </div>
+                </div>
+            `;
+        }
+        
+        html += '</div>';
+        return html;
+    }
+    
+    formatBonusText(bonus) {
+        switch(bonus.type) {
+            case 'fossil_value':
+                return `${((bonus.value - 1) * 100).toFixed(0)}% more fossil value`;
+            case 'dig_speed':
+                return `${((bonus.value - 1) * 100).toFixed(0)}% faster fossil spawning`;
+            case 'skeleton_chance':
+                return `+${(bonus.value * 100).toFixed(2)}% skeleton piece chance`;
+            default:
+                return 'Unknown bonus';
+        }
+    }
+    
+    bindMuseumTabs() {
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        
+        tabButtons.forEach(button => {
+            button.onclick = () => {
+                const tabId = button.dataset.tab;
+                
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabPanels.forEach(panel => panel.classList.remove('active'));
+                
+                button.classList.add('active');
+                document.getElementById(`${tabId}-tab`).classList.add('active');
+            };
+        });
+    }
+    
+    showExpeditionConfirmation() {
+        if (!game.rebirthSystem.canStartExpedition()) {
+            this.openModal('❌ Cannot Start Expedition', 
+                '<p>You need to complete the Velociraptor skeleton before starting your first expedition!</p>');
+            return;
+        }
+        
+        const preview = game.rebirthSystem.getExpeditionPreview();
+        
+        const content = `
+            <div class="expedition-preview">
+                <h3>Expedition Results</h3>
+                <div class="preview-stats">
+                    <div class="preview-item">
+                        <strong>Expedition Points Earned:</strong> 
+                        <span class="highlight">${preview.pointsEarned}</span>
+                    </div>
+                    <div class="preview-item">
+                        <strong>New Multiplier:</strong> 
+                        <span class="highlight">${preview.newMultiplier.toFixed(2)}x</span>
+                    </div>
+                </div>
+                
+                ${preview.unlockedFeatures.length > 0 ? `
+                    <div class="unlocked-features">
+                        <h4>🎉 New Features Unlocked:</h4>
+                        <ul>
+                            ${preview.unlockedFeatures.map(feature => `<li>${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                
+                <div class="warning">
+                    <p><strong>⚠️ Warning:</strong> This will reset your current progress (fossils, skeleton pieces) but keep your completed skeletons and upgrades!</p>
+                </div>
+            </div>
+        `;
+        
+        const footer = `
+            <button class="modal-btn cancel" onclick="modalSystem.closeModal()">Cancel</button>
+            <button class="modal-btn confirm" onclick="game.rebirthSystem.startExpedition(); modalSystem.closeModal();">
+                Start Expedition
+            </button>
+        `;
+        
+        this.openModal('🗺️ Start New Expedition', content, footer);
+    }
+}
+
+// Add CSS styles for modal system
+const modalCSS = `
+<style>
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-container {
+    background: #34495e;
+    border: 3px solid #e67e22;
+    border-radius: 10px;
+    max-width: 800px;
+    max-height: 80vh;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: #2c3e50;
+    padding: 20px;
+    border-bottom: 2px solid #e67e22;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    color: #e67e22;
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: #e67e22;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.modal-close:hover {
+    color: #d35400;
+}
+
+.modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 20px;
+    border-top: 2px solid #e67e22;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-btn.cancel {
+    background: #7f8c8d;
+    color: white;
+}
+
+.modal-btn.confirm {
+    background: #e67e22;
+    color: white;
+}
+
+.modal-btn:hover {
+    opacity: 0.8;
+}
+
+.museum-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    background: #2c3e50;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.stat-item h4 {
+    margin: 0 0 10px 0;
+    color: #e67e22;
+}
+
+.stat-value {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.museum-tabs {
+    display: flex;
+    border-bottom: 2px solid #e67e22;
+    margin-bottom: 20px;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    color: #bdc3c7;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+    color: #e67e22;
+    border-bottom-color: #e67e22;
+}
+
+.tab-button:hover {
+    color: #e67e22;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.skeleton-gallery, .digsite-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.skeleton-exhibit, .digsite-exhibit {
+    background: #2c3e50;
+    border: 1px solid #bdc3c7;
+    border-radius: 5px;
+    padding: 15px;
+}
+
+.skeleton-exhibit.completed {
+    border-color: #27ae60;
+    background: #2d5a3d;
+}
+
+.digsite-exhibit.current {
+    border-color: #3498db;
+    background: #2d3e50;
+}
+
+.skeleton-image {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.skeleton-placeholder {
+    font-size: 3em;
+    padding: 20px;
+}
+
+.skeleton-info h4, .digsite-info h4 {
+    color: #e67e22;
+    margin: 0 0 10px 0;
+}
+
+.skeleton-progress-bar {
+    background: #7f8c8d;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.completion-bonus {
+    background: #27ae60;
+    padding: 10px;
+    border-radius: 3px;
+    margin-top: 10px;
+    font-size: 0.9em;
+}
+
+.achievements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.achievement {
+    display: flex;
+    align-items: center;
+    background: #2c3e50;
+    padding: 15px;
+    border-radius: 5px;
+    border-left: 4px solid #7f8c8d;
+}
+
+.achievement.completed {
+    border-left-color: #27ae60;
+}
+
+.achievement-icon {
+    font-size: 2em;
+    margin-right: 15px;
+    width: 50px;
+    text-align: center;
+}
+
+.achievement-info {
+    flex: 1;
+}
+
+.achievement-info h4 {
+    margin: 0 0 5px 0;
+    color: #e67e22;
+}
+
+.achievement-status {
+    font-size: 1.5em;
+}
+
+.expedition-preview {
+    text-align: center;
+}
+
+.preview-stats {
+    background: #2c3e50;
+    padding: 20px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.preview-item {
+    margin: 10px 0;
+    font-size: 1.1em;
+}
+
+.highlight {
+    color: #e67e22;
+    font-weight: bold;
+}
+
+.unlocked-features {
+    background: #27ae60;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.unlocked-features ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.warning {
+    background: #e74c3c;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+
+.switch-digsite-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.switch-digsite-btn:hover {
+    background: #2980b9;
+}
+</style>
+`;
+
+document.head.insertAdjacentHTML('beforeend', modalCSS);
+
+// Initialize modal system
+let modalSystem;
+document.addEventListener('DOMContentLoaded', () => {
+    modalSystem = new ModalSystem();
+});
+
+// Add digsite switching functionality to Game class
+Game.prototype.switchDigsite = function(digsiteId) {
+    const digsiteData = DIGSITE_DATA[digsiteId];
+    if (this.skeletonSystem.meetsUnlockRequirement(digsiteData.unlockRequirement)) {
+        GAME_DATA.player.currentDigsite = digsiteId;
+        this.fossilsOnGround = []; // Clear current fossils
+        this.ui.showNotification(`Switched to ${digsiteData.name}!`, 'success');
+        modalSystem.closeModal();
+    }
+};
